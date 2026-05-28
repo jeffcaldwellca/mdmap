@@ -105,6 +105,16 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			//open graph url replacement (Yoast + RankMath)
 			add_filter('wpseo_opengraph_url', array( $this, 'replace_og_url' ), 10);
 			add_filter('rank_math/opengraph/facebook/og_url', array( $this, 'replace_og_url' ), 10);
+			//per-mapping site name / tagline / og image overrides (only fire when on a mapped domain)
+			add_filter('pre_option_blogname', array( $this, 'override_blogname' ));
+			add_filter('pre_option_blogdescription', array( $this, 'override_blogdescription' ));
+			add_filter('wpseo_replacements', array( $this, 'override_yoast_replacements' ));
+			add_filter('wpseo_opengraph_site_name', array( $this, 'override_og_site_name' ));
+			add_filter('rank_math/opengraph/facebook/og_site_name', array( $this, 'override_og_site_name' ));
+			add_filter('wpseo_opengraph_image', array( $this, 'override_og_image' ));
+			add_filter('rank_math/opengraph/facebook/og_image', array( $this, 'override_og_image' ));
+			add_filter('wpseo_twitter_image', array( $this, 'override_og_image' ));
+			add_filter('rank_math/opengraph/twitter/twitter_image', array( $this, 'override_og_image' ));
 			//rest api response domain replacement
 			add_filter('rest_post_dispatch', array( $this, 'rest_response_replace' ), 10, 3);
 			//flush all supported page caches when mappings or settings change
@@ -112,9 +122,9 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			//per-mapping robots.txt sitemap override
 			add_filter('robots_txt', array( $this, 'filter_robots_txt' ), 10, 2);
 			//ajax endpoints
-			add_action('wp_ajax_appap_health_check', array( $this, 'ajax_health_check' ));
-			add_action('wp_ajax_appap_export_mappings', array( $this, 'ajax_export_mappings' ));
-			add_action('wp_ajax_appap_import_mappings', array( $this, 'ajax_import_mappings' ));
+			add_action('wp_ajax_mdmap_health_check', array( $this, 'ajax_health_check' ));
+			add_action('wp_ajax_mdmap_export_mappings', array( $this, 'ajax_export_mappings' ));
+			add_action('wp_ajax_mdmap_import_mappings', array( $this, 'ajax_import_mappings' ));
 		  }
 
 		//setters/getters
@@ -436,7 +446,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			echo '</div>';
 
 			//calculate and maybe show warning for higher max_input_vars needed
-			$numberOfSettings = 9; //domain, path, customheadcode, redirection, enabled, noindex, ga4id, robotssitemap, sortorder
+			$numberOfSettings = 13; //domain, path, customheadcode, redirection, enabled, noindex, passthrough, sitename, sitetagline, ogimage, ga4id, robotssitemap, sortorder
 			if($cnt >= (intval(ini_get('max_input_vars')) / $numberOfSettings - 100)){
 				$this->saveMappingsButtonDisabled = true;
 				echo '<section class="notice notice-error">';
@@ -491,6 +501,30 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			echo '<div class="mdmap_app_mapping_additional_input">';
 				echo '<p class="mdmap_app_mapping_additional_input_header">' . esc_html__('Noindex original URL', 'mdmap_app') . '</p>';
 				echo '<label><input type="checkbox" name="mdmap_app_mappings[cnt_'.$cnt.'][noindex]" value="1" ' . checked( !empty($mapping['noindex']), true, false ) . ' />' . esc_html__('Add a noindex tag to the original path — search engines will index only the mapped domain.', 'mdmap_app') . '</label>';
+			echo '</div>';
+
+			echo '<div class="mdmap_app_mapping_additional_input">';
+				echo '<p class="mdmap_app_mapping_additional_input_header">' . esc_html__('Pass through unmatched paths', 'mdmap_app') . '</p>';
+				echo '<label><input type="checkbox" name="mdmap_app_mappings[cnt_'.$cnt.'][passthrough]" value="1" ' . checked( !empty($mapping['passthrough']), true, false ) . ' />' . esc_html__('When a request on this domain doesn\'t resolve under the mapped path, serve the same path from the main site instead of 404.', 'mdmap_app') . '</label>';
+				echo '<p class="description">' . esc_html__('Useful when the alternate domain acts as a branded alias of the main site. Any public top-level page on the main site becomes reachable from this domain — review before enabling on a site with private pages.', 'mdmap_app') . '</p>';
+			echo '</div>';
+
+			echo '<div class="mdmap_app_mapping_additional_input">';
+				echo '<p class="mdmap_app_mapping_additional_input_header">' . esc_html__('Site name (this domain only)', 'mdmap_app') . '</p>';
+				echo '<input type="text" class="regular-text" name="mdmap_app_mappings[cnt_'.$cnt.'][sitename]" value="' . esc_attr($mapping['sitename'] ?? '') . '" placeholder="' . esc_attr__('Leave empty to use the main site name', 'mdmap_app') . '" />';
+				echo '<p class="description">' . esc_html__('Replaces the site name in <title> tags, Open Graph site_name, RSS feeds, and SEO plugin output while visitors browse this mapped domain.', 'mdmap_app') . '</p>';
+			echo '</div>';
+
+			echo '<div class="mdmap_app_mapping_additional_input">';
+				echo '<p class="mdmap_app_mapping_additional_input_header">' . esc_html__('Site tagline (this domain only)', 'mdmap_app') . '</p>';
+				echo '<input type="text" class="regular-text" name="mdmap_app_mappings[cnt_'.$cnt.'][sitetagline]" value="' . esc_attr($mapping['sitetagline'] ?? '') . '" placeholder="' . esc_attr__('Leave empty to use the main site tagline', 'mdmap_app') . '" />';
+				echo '<p class="description">' . esc_html__('Replaces the site tagline (blogdescription) and Yoast/RankMath %sitedesc% expansions when visitors are on this mapped domain.', 'mdmap_app') . '</p>';
+			echo '</div>';
+
+			echo '<div class="mdmap_app_mapping_additional_input">';
+				echo '<p class="mdmap_app_mapping_additional_input_header">' . esc_html__('Default Open Graph image (this domain only)', 'mdmap_app') . '</p>';
+				echo '<input type="text" class="regular-text" name="mdmap_app_mappings[cnt_'.$cnt.'][ogimage]" value="' . esc_attr($mapping['ogimage'] ?? '') . '" placeholder="https://example.com/share-card.jpg" />';
+				echo '<p class="description">' . esc_html__('Used as a fallback og:image / twitter:image when a page on this mapped domain has no specific share image set. Per-page Yoast/RankMath images still take precedence.', 'mdmap_app') . '</p>';
 			echo '</div>';
 
 			echo '<div class="mdmap_app_mapping_additional_input">';
@@ -604,6 +638,18 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 								//noindex on original path
 								$val['noindex'] = !empty($val['noindex']) ? 1 : 0;
 
+								//pass-through unmatched paths to the un-rewritten path on the main site
+								$val['passthrough'] = !empty($val['passthrough']) ? 1 : 0;
+
+								//per-mapping site name override (empty = no override)
+								$val['sitename'] = isset($val['sitename']) ? sanitize_text_field($val['sitename']) : '';
+
+								//per-mapping site tagline override (empty = no override)
+								$val['sitetagline'] = isset($val['sitetagline']) ? sanitize_text_field($val['sitetagline']) : '';
+
+								//per-mapping default Open Graph image url (empty = no override)
+								$val['ogimage'] = !empty($val['ogimage']) ? esc_url_raw($val['ogimage']) : '';
+
 								//ga4 / gtm measurement id
 								if(!empty($val['ga4id'])){
 									$val['ga4id'] = strtoupper(sanitize_text_field($val['ga4id']));
@@ -690,7 +736,17 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 					//set request uri to our original mapping path AND if we have a longer query, we need to append it
 					$newRequestURI = trailingslashit($this->getCurrentMapping()['match']['path'] . substr($this->stripWww($this->getCurrentURI()), strlen($this->stripWww($this->getCurrentMapping()['match']['domain']))));
 					//enable additional filtering on the request_uri
-					$_SERVER['REQUEST_URI'] = apply_filters('mdmap_appf_request_uri', $newRequestURI, $this->getCurrentURI(), $this->getCurrentMapping());
+					$newRequestURI = apply_filters('mdmap_appf_request_uri', $newRequestURI, $this->getCurrentURI(), $this->getCurrentMapping());
+
+					//pass-through: when this mapping opts in, and the rewritten path doesn't resolve
+					//to any real page/post but the original (un-rewritten) path does, keep the original.
+					//lets pages outside the mapping's subtree remain reachable under the mapped domain.
+					$passthrough = !empty($this->getCurrentMapping()['match']['passthrough']);
+					if( $passthrough && !$this->pathHasContent($newRequestURI) && $this->pathHasContent($this->getOriginalRequestURI()) ){
+						//leave REQUEST_URI as the original path — currentMapping stays set so canonical/og/admin-bar still use the mapped domain
+					}else{
+						$_SERVER['REQUEST_URI'] = $newRequestURI;
+					}
 				}
 			}
 
@@ -1017,6 +1073,23 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			return !isset($mapping['enabled']) || intval($mapping['enabled']) !== 0;
 		}
 
+		//return true when a uri resolves to a real page, post, or custom post type entry
+		//used by the per-mapping pass-through option to decide whether to fall back to the un-rewritten path
+		private function pathHasContent($uri){
+			if(empty($uri)) return false;
+			$path = parse_url($uri, PHP_URL_PATH);
+			if(empty($path)) return false;
+			//root always resolves to the home page / front page
+			if($path === '/') return true;
+			$trimmed = trim($path, '/');
+			if($trimmed === '') return true;
+			//hierarchical pages: the dominant content type for this plugin's typical use case
+			if(function_exists('get_page_by_path') && get_page_by_path($trimmed, OBJECT, 'page')) return true;
+			//posts and custom post types reachable via the rewrite rules
+			if(function_exists('url_to_postid') && url_to_postid(home_url($path))) return true;
+			return false;
+		}
+
 		//return true when the current incoming domain is on the admin-configured exclusion list
 		private function isCurrentDomainExcluded(){
 			$options = $this->getSettings();
@@ -1089,6 +1162,50 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 		//replace the OG URL with the mapped domain (Yoast + RankMath filter target)
 		public function replace_og_url($url){
 			return $this->replace_uri($url);
+		}
+
+		// ── Per-mapping branding (site name / tagline / og image) ─────────
+
+		//return the override for a given key from the active mapping, or null when nothing should be overridden
+		private function getMappingBrand($key){
+			if(empty($this->getCurrentMapping()['match'])) return null;
+			$value = $this->getCurrentMapping()['match'][$key] ?? '';
+			return $value !== '' ? $value : null;
+		}
+
+		//short-circuit get_option('blogname') with the mapping's override while on the mapped domain
+		public function override_blogname($value){
+			$override = $this->getMappingBrand('sitename');
+			return $override !== null ? $override : $value;
+		}
+
+		//short-circuit get_option('blogdescription') with the mapping's override while on the mapped domain
+		public function override_blogdescription($value){
+			$override = $this->getMappingBrand('sitetagline');
+			return $override !== null ? $override : $value;
+		}
+
+		//swap Yoast's %%sitename%% / %%sitedesc%% replacement values when on the mapped domain
+		public function override_yoast_replacements($replacements){
+			if(!is_array($replacements)) return $replacements;
+			$name = $this->getMappingBrand('sitename');
+			$desc = $this->getMappingBrand('sitetagline');
+			if($name !== null) $replacements['%%sitename%%'] = $name;
+			if($desc !== null) $replacements['%%sitedesc%%'] = $desc;
+			return $replacements;
+		}
+
+		//override og:site_name (Yoast + RankMath) when set on the active mapping
+		public function override_og_site_name($value){
+			$override = $this->getMappingBrand('sitename');
+			return $override !== null ? $override : $value;
+		}
+
+		//fallback og:image / twitter:image when the page has none and the mapping has a default set
+		public function override_og_image($value){
+			if(!empty($value)) return $value; //page has its own — leave it alone
+			$override = $this->getMappingBrand('ogimage');
+			return $override !== null ? $override : $value;
 		}
 
 		// ── REST API ──────────────────────────────────────────────────────

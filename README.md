@@ -56,6 +56,10 @@ Point any extra domain or subdomain at a specific WordPress path and the plugin 
 | **Active / Inactive toggle** | Disable a mapping without deleting it |
 | **301 redirect** | Sends visitors arriving at the original path to the mapped domain |
 | **Noindex on original path** | Injects `<meta name="robots" content="noindex,follow">` on the original WordPress path so search engines index only the mapped domain |
+| **Pass through unmatched paths** | When a request on the mapped domain doesn't resolve under the mapping's subtree, serves the same path from the main site instead of returning 404. Use when the mapped domain is a branded alias of the main site (e.g. root maps to a landing page, other paths mirror the main site). Off by default — review before enabling on sites with private/unlinked pages, since all public top-level content becomes reachable from the mapped domain. |
+| **Site name** | Overrides `bloginfo('name')` / `get_option('blogname')` while visitors are on this mapped domain. Flows through to `<title>` tags, `og:site_name`, RSS feed channel, Yoast `%%sitename%%`, RankMath, etc. Leave empty to inherit the main site's name. |
+| **Site tagline** | Overrides `bloginfo('description')` / `get_option('blogdescription')` while on this mapped domain. Used by Yoast `%%sitedesc%%`, RankMath, RSS, and themes that surface the tagline. |
+| **Default Open Graph image** | Fallback `og:image` / `twitter:image` URL used when a page on this mapped domain has no per-page share image. Per-page Yoast/RankMath images still take precedence. |
 | **Custom `<head>` code** | HTML injected into `wp_head` only when the mapped domain is active (Google Site Verification tags, etc.) |
 | **GA4 / GTM ID** | Outputs a `gtag.js` snippet in `wp_head` only on the mapped domain. Accepts `G-XXXXXXXXXX` or `GTM-XXXXXXX` format |
 | **robots.txt sitemap URL** | Replaces the `Sitemap:` directive in `robots.txt` when the mapped domain is active |
