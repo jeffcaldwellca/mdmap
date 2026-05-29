@@ -45,9 +45,10 @@ Point any extra domain or subdomain at a specific WordPress path and the plugin 
 ### Core mapping
 - Domain-stays-in-bar mapping — no redirect, no iframe
 - Rewrites all standard WordPress permalink functions (pages, posts, CPTs, archives, categories, feeds, nav menus)
+- Keeps the home link and search-form action on the mapped domain while a visitor is browsing it (filterable via `mdmap_appf_rewrite_home_url`)
 - Handles `http`/`https` and `www`/`non-www` automatically — one entry per domain is sufficient
 - Multiple mappings supported; all descendant URIs are mapped automatically
-- Yoast SEO XML sitemap compatibility
+- Core, Yoast SEO, and RankMath XML sitemap compatibility
 - Elementor preview URL compatibility
 
 ### Per-mapping options (advanced panel)
@@ -66,14 +67,15 @@ Point any extra domain or subdomain at a specific WordPress path and the plugin 
 | **Test connection** | Performs a live HTTP check and displays the response code |
 
 ### SEO
-- **Automatic canonical tag** — `<link rel="canonical">` using the mapped domain is output on every mapped page
+- **Canonical tag** — a single `<link rel="canonical">` using the mapped domain on every mapped page. When Yoast SEO or RankMath is active, their canonical is rewritten instead (no duplicate tag); otherwise core's `rel_canonical` is replaced with one mapped-domain tag.
 - **Open Graph URL replacement** — patches `og:url` for Yoast SEO and RankMath
+- **XML sitemaps** — mapped-domain URLs in the core WordPress sitemap (`wp-sitemap.xml`), Yoast, and RankMath sitemaps
 - **REST API domain replacement** — rewrites domain references in REST API JSON responses
 
 ### Administration
 - **Admin bar badge** — shows the active mapped domain when browsing the frontend while logged in
 - **Export Mappings** — downloads all mappings as a JSON file
-- **Import Mappings** — uploads a previously exported JSON file and merges mappings through the sanitizer
+- **Import Mappings** — uploads a previously exported JSON file and merges it with existing mappings through the sanitizer, reporting how many were added vs. skipped (duplicate/invalid)
 - **Drag-to-reorder** — drag mapping rows to set a custom sort order
 - **Cache flush** — automatically purges WP Super Cache, W3 Total Cache, WP Rocket, LiteSpeed Cache, WP Engine, and the object cache when mappings or settings change
 
@@ -97,6 +99,7 @@ Key hooks:
 | `mdmap_appf_uri_match` | filter | Override or extend the URI matching logic |
 | `mdmap_appf_request_uri` | filter | Modify the rewritten `REQUEST_URI` |
 | `mdmap_appf_filtered_uri` | filter | Modify a replaced URI before it is returned |
+| `mdmap_appf_rewrite_home_url` | filter | Return `false` to stop rewriting `home_url()` to the mapped domain |
 | `mdmap_appf_save_mapping` | filter | Modify a single mapping before it is saved |
 | `mdmap_appf_save_mappings` | filter | Modify the full mappings array before it is saved |
 | `mdmap_appf_save_settings` | filter | Modify the settings array before it is saved |
@@ -116,10 +119,13 @@ WP Fastest Cache works out of the box. W3 Total Cache requires enabling "Cache a
 Yes, including Elementor. If a page builder fails to load mapped pages in the editor, enable Enhanced Compatibility Mode in the Settings tab.
 
 **Does it work with Yoast SEO?**
-Yes. XML sitemaps list the mapped domains. `og:url` is patched automatically.
+Yes. XML sitemaps list the mapped domains, `og:url` is patched, and the canonical is rewritten to the mapped domain (no duplicate tag).
 
 **Does it work with RankMath?**
-Yes. `og:url` is patched automatically.
+Yes. XML sitemaps list the mapped domains, `og:url` is patched, and the canonical is rewritten to the mapped domain.
+
+**What about the default WordPress sitemap?**
+The core `wp-sitemap.xml` entries that fall under a mapped path are rewritten to the mapped domain too.
 
 **What about SEO / duplicate content?**
 Enable the "Noindex on original path" option per mapping, or enable the "301 redirect" option. The plugin also automatically outputs a canonical tag on mapped pages.

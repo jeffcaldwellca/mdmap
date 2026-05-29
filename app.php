@@ -115,6 +115,11 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			add_filter('rank_math/opengraph/facebook/og_image', array( $this, 'override_og_image' ));
 			add_filter('wpseo_twitter_image', array( $this, 'override_og_image' ));
 			add_filter('rank_math/opengraph/twitter/twitter_image', array( $this, 'override_og_image' ));
+			//canonical url replacement for SEO plugins (we suppress our own tag when one of these is active)
+			add_filter('wpseo_canonical', array( $this, 'replace_canonical' ), 10);
+			add_filter('rank_math/frontend/canonical', array( $this, 'replace_canonical' ), 10);
+			//keep home/search links on the mapped domain (front-end of a mapped page only; self-guarded)
+			add_filter('home_url', array( $this, 'replace_home_url' ), 10, 3);
 			//rest api response domain replacement
 			add_filter('rest_post_dispatch', array( $this, 'rest_response_replace' ), 10, 3);
 			//flush all supported page caches when mappings or settings change
@@ -125,6 +130,8 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			add_action('wp_ajax_mdmap_health_check', array( $this, 'ajax_health_check' ));
 			add_action('wp_ajax_mdmap_export_mappings', array( $this, 'ajax_export_mappings' ));
 			add_action('wp_ajax_mdmap_import_mappings', array( $this, 'ajax_import_mappings' ));
+			//settings link on the plugins list row
+			add_filter('plugin_action_links_' . $this->pluginBasename, array( $this, 'add_settings_link' ));
 		  }
 
 		//setters/getters
@@ -207,6 +214,13 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			$this->register_settings();
 		}
 
+		//add a "Settings" link to the plugin's row on the Plugins screen
+		public function add_settings_link($links){
+			$url = admin_url('tools.php?page=' . $this->pluginBasename);
+			array_unshift($links, '<a href="' . esc_url($url) . '">' . esc_html__('Settings', 'mdmap_app') . '</a>');
+			return $links;
+		}
+
 		//generate menu page output
 		public function output_menu_page(){
 			// check user capabilities
@@ -228,9 +242,6 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 				//updated notices
 				if ( isset( $_GET['settings-updated'] ) ) {
 					add_settings_error( 'mdmap_app_messages', 'mdmap_app_message', sprintf(esc_html__( '%s saved successfully', 'mdmap_app' ), esc_html($active_tab_name)), 'updated' );
-
-					//flush rewrite rules on each update of our settings/mappings, just to be sure...
-					flush_rewrite_rules();
 				}
 				settings_errors( 'mdmap_app_messages' );
 
@@ -410,7 +421,8 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 				$cnt = 0;
 				if(isset($options['mappings']) && !empty($options['mappings'])){
 					foreach($options['mappings'] as $mapping){
-						echo '<article class="'. apply_filters( 'mdmap_appf_mapping_class', 'mdmap_app_mapping' ) .'">';
+						$mappingClass = 'mdmap_app_mapping' . ($this->isMappingEnabled($mapping) ? '' : ' mdmap_app_mapping_disabled');
+						echo '<article class="'. apply_filters( 'mdmap_appf_mapping_class', $mappingClass ) .'">';
 							echo '<div class="mdmap_app_mapping_header">';
 								echo '<div><div class="mdmap_app_input_wrap"><span class="mdmap_app_input_prefix">http[s]://</span><input type="text" name="mdmap_app_mappings[cnt_'.$cnt.'][domain]" value="' . esc_attr($mapping['domain']) . '" /></div></div>';
 								echo '<div class="mdmap_app_mapping_arrow">&raquo;</div>';
@@ -446,7 +458,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			echo '</div>';
 
 			//calculate and maybe show warning for higher max_input_vars needed
-			$numberOfSettings = 13; //domain, path, customheadcode, redirection, enabled, noindex, passthrough, sitename, sitetagline, ogimage, ga4id, robotssitemap, sortorder
+			$numberOfSettings = 14; //domain, path, customheadcode, redirection, enabled (+hidden companion), noindex, passthrough, sitename, sitetagline, ogimage, ga4id, robotssitemap, sortorder
 			if($cnt >= (intval(ini_get('max_input_vars')) / $numberOfSettings - 100)){
 				$this->saveMappingsButtonDisabled = true;
 				echo '<section class="notice notice-error">';
@@ -472,10 +484,14 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 		//function to show additional input fields in mapping body
 		public function render_advanced_mapping_inputs($cnt, $mapping){
 			$isNew = ($cnt === 'new');
+			//the new-mapping row passes false; normalise so the field reads below are warning-free
+			if(!is_array($mapping)) $mapping = array();
 
 			//enabled/disabled toggle — shown for all mappings including new
 			$isEnabled = ($isNew || !isset($mapping['enabled']) || intval($mapping['enabled']) !== 0);
 			echo '<div class="mdmap_app_mapping_additional_input mdmap_app_toggle_row">';
+				//hidden companion so an unchecked box still submits a 0 — the checkbox value wins when checked
+				echo '<input type="hidden" name="mdmap_app_mappings[cnt_'.$cnt.'][enabled]" value="0" />';
 				echo '<label class="mdmap_app_toggle_label">';
 					echo '<input type="checkbox" name="mdmap_app_mappings[cnt_'.$cnt.'][enabled]" value="1" ' . checked($isEnabled, true, false) . ' />';
 					echo ' ' . esc_html__('Active', 'mdmap_app');
@@ -486,7 +502,11 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 				}
 				echo '</div>';
 
-			if($isNew) return;
+			//hidden field carrying this row's position; the admin JS renumbers these on drag-to-reorder.
+			//only existing rows participate in the sortable (the new row lives outside that container).
+			if(!$isNew){
+				echo '<input type="hidden" class="mdmap_app_sortorder" name="mdmap_app_mappings[cnt_'.$cnt.'][sortorder]" value="' . esc_attr($cnt) . '" />';
+			}
 
 			echo '<div class="mdmap_app_mapping_additional_input">';
 				echo '<p class="mdmap_app_mapping_additional_input_header">' . esc_html__('Custom <head> code (this domain only)', 'mdmap_app') . '</p>';
@@ -738,11 +758,19 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 					//enable additional filtering on the request_uri
 					$newRequestURI = apply_filters('mdmap_appf_request_uri', $newRequestURI, $this->getCurrentURI(), $this->getCurrentMapping());
 
+					//robots.txt: leave the request untouched so WP serves its virtual robots.txt
+					//(is_robots() stays true). currentMapping is still set, so filter_robots_txt()
+					//can inject the per-mapping Sitemap line for this domain.
+					$incomingPath = parse_url($this->getOriginalRequestURI(), PHP_URL_PATH);
+					$isRobotsRequest = ($incomingPath === '/robots.txt');
+
 					//pass-through: when this mapping opts in, and the rewritten path doesn't resolve
 					//to any real page/post but the original (un-rewritten) path does, keep the original.
 					//lets pages outside the mapping's subtree remain reachable under the mapped domain.
 					$passthrough = !empty($this->getCurrentMapping()['match']['passthrough']);
-					if( $passthrough && !$this->pathHasContent($newRequestURI) && $this->pathHasContent($this->getOriginalRequestURI()) ){
+					if( $isRobotsRequest ){
+						//leave REQUEST_URI as /robots.txt
+					}else if( $passthrough && !$this->pathHasContent($newRequestURI) && $this->pathHasContent($this->getOriginalRequestURI()) ){
 						//leave REQUEST_URI as the original path — currentMapping stays set so canonical/og/admin-bar still use the mapped domain
 					}else{
 						$_SERVER['REQUEST_URI'] = $newRequestURI;
@@ -783,7 +811,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 
 			//confirm REQUEST_URI actually begins with the mapping path before slicing
 			$requestPath = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH );
-			if( $requestPath === false || strpos( $requestPath, $mapping['path'] ) !== 0 ) return;
+			if( !$this->pathUnderBase( $requestPath, $mapping['path'] ) ) return;
 
 			//extra path beyond the mapped base (e.g. /product-a/subpage -> /subpage)
 			//substr can return false in PHP 7 if offset >= string length; normalise to empty string
@@ -905,6 +933,14 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			add_filter( 'wpseo_xml_sitemap_post_url', array($this, 'replace_yoast_xml_sitemap_post_url'), 0, 2 );
 			add_filter( 'wpseo_sitemap_entry', array($this, 'replace_yoast_sitemap_entry'), 10, 3 );
 
+			//core WordPress sitemaps (wp-sitemap.xml, default since WP 5.5)
+			add_filter( 'wp_sitemaps_posts_entry', array($this, 'replace_sitemap_entry'), 10 );
+			add_filter( 'wp_sitemaps_taxonomies_entry', array($this, 'replace_sitemap_entry'), 10 );
+			add_filter( 'wp_sitemaps_users_entry', array($this, 'replace_sitemap_entry'), 10 );
+
+			//rankmath sitemaps
+			add_filter( 'rank_math/sitemap/entry', array($this, 'replace_sitemap_entry'), 10 );
+
 			//elementor preview url
 			add_filter( 'elementor/document/urls/preview', array($this, 'replace_elementor_preview_url') );
 		}
@@ -943,6 +979,29 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			}
 
 			return $originalURI;
+		}
+		//keep home/search links on the mapped domain while a visitor is browsing one.
+		//tightly scoped: front-end of a mapped page only; never during admin/ajax/cron/rest/feed;
+		//subtree links fall back to replace_uri, and only the bare site root is repointed at the mapped root.
+		public function replace_home_url($url, $path = '', $orig_scheme = null){
+			if(empty($this->getCurrentMapping()['match'])) return $url;
+			if(is_admin() || wp_doing_ajax() || wp_doing_cron() || (defined('REST_REQUEST') && REST_REQUEST) || is_feed()) return $url;
+			if($orig_scheme === 'rest') return $url; //leave the REST API base alone
+			if(!apply_filters('mdmap_appf_rewrite_home_url', true, $url, $path)) return $url;
+
+			//links that fall under a mapping's subtree are already handled by replace_uri
+			$mapped = $this->replace_uri($url);
+			if($mapped !== $url) return $mapped;
+
+			//otherwise only repoint the bare site root (home link, search form action, etc.)
+			if(!is_string($path) || trim($path, '/') === ''){
+				$mapping  = $this->getCurrentMapping()['match'];
+				$protocol = is_ssl() ? 'https' : 'http';
+				$slash    = (is_string($path) && $path !== '') ? '/' : '';
+				return $protocol . '://' . $mapping['domain'] . $slash;
+			}
+
+			return $url;
 		}
 		public function unreplace_uri( $mapped_uri ){
 
@@ -1046,6 +1105,14 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			}
 			return $url;
 		}
+		//rewrite the loc of a sitemap entry to the mapped domain (core WP + RankMath sitemaps).
+		//only urls under a mapping's path are changed; index/sub-sitemap urls at the site root are left alone.
+		public function replace_sitemap_entry($entry){
+			if(is_array($entry) && !empty($entry['loc'])){
+				$entry['loc'] = $this->replace_uri($entry['loc']);
+			}
+			return $entry;
+		}
 		public function replace_elementor_preview_url($preview_url){
 			//elementor saves the uri in some escaped format
 			$unescaped_preview_url = str_replace( '\/', '/', $preview_url);
@@ -1071,6 +1138,13 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 		//return true when a mapping should be processed (absent enabled key = active, for backward compat)
 		private function isMappingEnabled($mapping){
 			return !isset($mapping['enabled']) || intval($mapping['enabled']) !== 0;
+		}
+
+		//return true when $path is the mapping's base path or a descendant of it.
+		//slash-boundary aware so a mapping for /news does not match /newsletter
+		private function pathUnderBase($path, $base){
+			if(empty($path) || empty($base)) return false;
+			return strpos(trailingslashit($path), trailingslashit($base)) === 0;
 		}
 
 		//return true when a uri resolves to a real page, post, or custom post type entry
@@ -1105,9 +1179,24 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 
 		// ── Canonical / SEO head tags ─────────────────────────────────────
 
-		//output <link rel="canonical"> using the mapped domain when on a mapped page
+		//true when an SEO plugin that emits its own canonical is active
+		private function seoPluginActive(){
+			return defined('WPSEO_VERSION') || defined('RANK_MATH_VERSION') || class_exists('RankMath');
+		}
+
+		//rewrite an SEO plugin's canonical url to the mapped domain (Yoast + RankMath)
+		public function replace_canonical($url){
+			return $this->replace_uri($url);
+		}
+
+		//output <link rel="canonical"> using the mapped domain when on a mapped page.
+		//when an SEO plugin is active it owns the canonical (we filter it via replace_canonical);
+		//otherwise we emit a single tag and remove core's rel_canonical so it isn't duplicated.
 		public function output_canonical_tag(){
 			if(empty($this->getCurrentMapping()['match'])) return;
+			if($this->seoPluginActive()) return;
+			//we own the canonical — stop core from printing a second one
+			remove_action('wp_head', 'rel_canonical');
 			$mapping    = $this->getCurrentMapping()['match'];
 			$protocol   = is_ssl() ? 'https' : 'http';
 			$requestUri = $this->getOriginalRequestURI();
@@ -1125,7 +1214,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			foreach($mappings['mappings'] as $mapping){
 				if(!$this->isMappingEnabled($mapping)) continue;
 				if(empty($mapping['noindex'])) continue;
-				if(strpos($requestPath, $mapping['path']) === 0){
+				if($this->pathUnderBase($requestPath, $mapping['path'])){
 					echo '<meta name="robots" content="noindex,follow" />' . "\n";
 					return;
 				}
@@ -1285,7 +1374,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			wp_send_json_success(array('mappings' => $this->getMappings()));
 		}
 
-		//import: accept JSON, run through sanitizer, save
+		//import: accept JSON, merge with existing mappings through the sanitizer, save
 		public function ajax_import_mappings(){
 			check_ajax_referer('mdmap_import', 'nonce');
 			if(!current_user_can('manage_options')) wp_die(-1);
@@ -1298,15 +1387,34 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			if(!isset($data['mappings']) || !is_array($data['mappings'])){
 				wp_send_json_error(array('message' => esc_html__('The file doesn\'t look like a valid mappings export.', 'mdmap_app')));
 			}
-			//re-key as cnt_ so the sanitizer picks them up
+
+			//merge: keep existing mappings, append the imported ones, then let the sanitizer
+			//dedupe (existing wins on a domain/path clash) and validate the union.
+			$existing     = $this->getMappings();
+			$existingList = (!empty($existing['mappings']) && is_array($existing['mappings'])) ? array_values($existing['mappings']) : array();
+			$importedList = array_values($data['mappings']);
+
 			$toSanitize = array();
-			foreach($data['mappings'] as $i => $m){
-				$toSanitize['cnt_' . intval($i)] = $m;
+			$n = 0;
+			foreach(array_merge($existingList, $importedList) as $m){
+				if(is_array($m)) $toSanitize['cnt_' . $n++] = $m;
 			}
 			$sanitized = $this->sanitize_mappings_group($toSanitize);
 			update_option('mdmap_app_mappings', $sanitized);
 			$this->setMappings($sanitized);
-			wp_send_json_success(array('message' => esc_html__('Mappings imported successfully.', 'mdmap_app')));
+
+			//report how many actually landed vs. were dropped as duplicates/invalid
+			$before  = count($existingList);
+			$after   = (!empty($sanitized['mappings']) && is_array($sanitized['mappings'])) ? count($sanitized['mappings']) : 0;
+			$added   = max(0, $after - $before);
+			$skipped = max(0, count($importedList) - $added);
+			wp_send_json_success(array(
+				'message' => sprintf(
+					/* translators: 1: number of mappings added, 2: number skipped */
+					esc_html__('Import complete: %1$d added, %2$d skipped (duplicate or invalid).', 'mdmap_app'),
+					$added, $skipped
+				)
+			));
 		}
 	}
 

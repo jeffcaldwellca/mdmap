@@ -47,6 +47,11 @@ jQuery(document).ready(function ($) {
     ).insertBefore('.mdmap_app_wrap p.submit');
   });
 
+  /* ── Active toggle: reflect disabled state live ─────────────── */
+  $('body').on('change', '.mdmap_app_toggle_label input[type=checkbox]', function () {
+    $(this).closest('.mdmap_app_mapping').toggleClass('mdmap_app_mapping_disabled', !this.checked);
+  });
+
   /* ── Health check ───────────────────────────────────────────── */
   $('body').on('click', '.mdmap_app_health_btn', function () {
     var $btn    = $(this);

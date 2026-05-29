@@ -269,24 +269,6 @@ a.nav-tab.nav-tab-featured {
   border-color: #999;
 }
 
-/* ── Advanced / promo sections ──────────────────────────────────── */
-.mdmap_app_advanced_section {
-  display: flex;
-  gap: 20px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--mdm-border);
-}
-
-.mdmap_app_advanced_section img {
-  max-width: 100%;
-  border-radius: 4px;
-}
-
-.mdmap_app_advanced_section > * {
-  flex: 1 1 50%;
-}
-
 /* ── Drag-to-reorder ────────────────────────────────────────────── */
 .mdmap_app_mappings .mdmap_app_mapping_header {
   cursor: grab;
@@ -394,13 +376,5 @@ a.nav-tab.nav-tab-featured {
     text-align: center;
     transform: rotate(90deg);
     padding: 4px 0;
-  }
-
-  .mdmap_app_advanced_section {
-    flex-direction: column;
-  }
-
-  .mdmap_app_advanced_section > * {
-    flex: 1 1 100%;
   }
 }
