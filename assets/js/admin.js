@@ -40,11 +40,7 @@ jQuery(document).ready(function ($) {
   $('.mdmap_app_delete_mapping a').on('click', function (e) {
     e.preventDefault();
     $(this).closest('.mdmap_app_mapping').remove();
-    buildNotice(
-      o.removedMessage,
-      o.undoMessage,
-      o.dismissMessage
-    ).insertBefore('.mdmap_app_wrap p.submit');
+    showNotice(buildNotice(o.removedMessage, o.undoMessage, o.dismissMessage));
   });
 
   /* ── Active toggle: reflect disabled state live ─────────────── */
@@ -102,16 +98,13 @@ jQuery(document).ready(function ($) {
         data:   e.target.result
       }).done(function (res) {
         if (res.success) {
-          buildNotice(res.data.message, o.undoMessage, o.dismissMessage)
-            .insertBefore('.mdmap_app_wrap p.submit');
+          showNotice(buildNotice(res.data.message, null, o.dismissMessage, 'success'));
           setTimeout(function () { location.reload(); }, 1500);
         } else {
-          buildNotice((res.data ? res.data.message : o.importError), o.undoMessage, o.dismissMessage)
-            .insertBefore('.mdmap_app_wrap p.submit');
+          showNotice(buildNotice((res.data ? res.data.message : o.importError), null, o.dismissMessage, 'error'));
         }
       }).fail(function () {
-        buildNotice(o.importError, o.undoMessage, o.dismissMessage)
-          .insertBefore('.mdmap_app_wrap p.submit');
+        showNotice(buildNotice(o.importError, null, o.dismissMessage, 'error'));
       });
     };
     reader.readAsText(file);
@@ -131,12 +124,28 @@ jQuery(document).ready(function ($) {
   });
 
   /* ── Helper: build a dismissible notice ─────────────────────── */
-  function buildNotice(message, undoLabel, dismissLabel) {
-    var $undo    = $('<a>').addClass('mdmap_app_reload').attr('href', '#').text(undoLabel);
-    var $msg     = $('<p>').append($('<strong>').text(message)).append(' \u2014 ').append($undo);
+  // actionLabel is optional \u2014 when provided, an undo/reload link is appended.
+  // noticeType picks the WP notice colour (info/success/error); defaults to info.
+  function buildNotice(message, actionLabel, dismissLabel, noticeType) {
+    var $msg = $('<p>').append($('<strong>').text(message));
+    if (actionLabel) {
+      var $undo = $('<a>').addClass('mdmap_app_reload').attr('href', '#').text(actionLabel);
+      $msg.append(' \u2014 ').append($undo);
+    }
     var $dismiss = $('<button>').attr('type', 'button').addClass('notice-dismiss')
                     .append($('<span>').addClass('screen-reader-text').text(dismissLabel));
-    return $('<div>').addClass('notice notice-info is-dismissible mdmap_app_notice')
+    return $('<div>').addClass('notice notice-' + (noticeType || 'info') + ' is-dismissible mdmap_app_notice')
                      .append($msg).append($dismiss);
+  }
+
+  // Place a notice where it stays visible: above the sticky Save button when
+  // present, else under the page heading (Save is hidden at the max_input_vars limit).
+  function showNotice($notice) {
+    var $submit = $('.mdmap_app_wrap p.submit');
+    if ($submit.length) {
+      $notice.insertBefore($submit);
+    } else {
+      $('.mdmap_app_wrap > h1').first().after($notice);
+    }
   }
 });

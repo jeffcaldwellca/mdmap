@@ -76,12 +76,12 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
 
 			//set current uri
-			$phpServerVar = (!empty($this->getSettings()) && isset($this->getSettings()['php_server'])) ? $this->getSettings()['php_server'] : 'HTTP_HOST';
+			$phpServerVar = (!empty($this->getSettings()) && isset($this->getSettings()['php_server'])) ? $this->getSettings()['php_server'] : 'SERVER_NAME';
 		// Fall back to HTTP_HOST when SERVER_NAME doesn't reflect the actual requested host (e.g. behind a proxy or with domain aliases)
-		if( $phpServerVar === 'SERVER_NAME' && !empty($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST'] !== $_SERVER['SERVER_NAME'] ){
+		if( $phpServerVar === 'SERVER_NAME' && !empty($_SERVER['HTTP_HOST']) && (!isset($_SERVER['SERVER_NAME']) || $_SERVER['HTTP_HOST'] !== $_SERVER['SERVER_NAME']) ){
 			$phpServerVar = 'HTTP_HOST';
 		}
-		$this->setCurrentURI($_SERVER[$phpServerVar] . $_SERVER['REQUEST_URI']);
+		$this->setCurrentURI(($_SERVER[$phpServerVar] ?? '') . ($_SERVER['REQUEST_URI'] ?? ''));
 
 			//process request
 			add_filter( 'do_parse_request', array( $this, 'parse_request' ), 10, 3 );
@@ -170,11 +170,6 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 		public function getOriginalRequestURI(){
 			return $this->originalRequestURI;
 		}
-		public function getOriginalURI(){
-			global $wp;
-			return home_url( $wp->request );
-		}
-
 		//set textdomain
 	  public function set_textdomain(){
 			load_plugin_textdomain( 'mdmap_app', false, dirname( $this->pluginBasename ) . '/languages/' );
@@ -232,7 +227,14 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			$valid_tabs = array('settings', 'advanced', 'help');
 			$raw_tab = isset($_GET['tab']) ? $_GET['tab'] : '';
 			$active_tab = in_array($raw_tab, $valid_tabs, true) ? $raw_tab : 'mappings';
-			$active_tab_name = $active_tab === 'mappings' ? esc_html__('Mappings', 'mdmap_app') : ucfirst($active_tab);
+			//translated, human label per tab — keeps the "Save %s" button and "%s saved" notice fully localized
+			$tab_labels = array(
+				'mappings' => esc_html__('Mappings', 'mdmap_app'),
+				'settings' => esc_html__('Settings', 'mdmap_app'),
+				'advanced' => esc_html__('Developers', 'mdmap_app'),
+				'help'     => esc_html__('Help', 'mdmap_app'),
+			);
+			$active_tab_name = isset($tab_labels[$active_tab]) ? $tab_labels[$active_tab] : ucfirst($active_tab);
 
 			echo '<div class="wrap mdmap_app_wrap">';
 
@@ -250,10 +252,10 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 
 				//tabs
 				echo '<h2 class="nav-tab-wrapper">';
-					echo '<a href="?page='. $this->pluginBasename .'&amp;tab=mappings" class="nav-tab ' . ($active_tab == 'mappings' ? 'nav-tab-active ' : '') . '">' . esc_html__('Mappings', 'mdmap_app') . '</a>';
-					echo '<a href="?page='. $this->pluginBasename .'&amp;tab=settings" class="nav-tab ' . ($active_tab == 'settings' ? 'nav-tab-active ' : '') . '">' . esc_html__('Settings', 'mdmap_app') . '</a>';
-					echo '<a href="?page='. $this->pluginBasename .'&amp;tab=advanced" class="nav-tab nav-tab-featured ' . ($active_tab == 'advanced' ? 'nav-tab-active ' : '') . '">' . esc_html__('Advanced', 'mdmap_app') . '</a>';
-					echo '<a href="?page='. $this->pluginBasename .'&amp;tab=help" class="nav-tab ' . ($active_tab == 'help' ? 'nav-tab-active ' : '') . '">' . esc_html__('Help', 'mdmap_app') . '</a>';
+					echo '<a href="?page='. $this->pluginBasename .'&amp;tab=mappings" class="nav-tab ' . ($active_tab == 'mappings' ? 'nav-tab-active ' : '') . '">' . $tab_labels['mappings'] . '</a>';
+					echo '<a href="?page='. $this->pluginBasename .'&amp;tab=settings" class="nav-tab ' . ($active_tab == 'settings' ? 'nav-tab-active ' : '') . '">' . $tab_labels['settings'] . '</a>';
+					echo '<a href="?page='. $this->pluginBasename .'&amp;tab=advanced" class="nav-tab ' . ($active_tab == 'advanced' ? 'nav-tab-active ' : '') . '">' . $tab_labels['advanced'] . '</a>';
+					echo '<a href="?page='. $this->pluginBasename .'&amp;tab=help" class="nav-tab ' . ($active_tab == 'help' ? 'nav-tab-active ' : '') . '">' . $tab_labels['help'] . '</a>';
 				echo '</h2>';
 
 				//main form
@@ -443,7 +445,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 					echo '<div class="mdmap_app_mapping_header">';
 						echo '<div><div class="mdmap_app_input_wrap"><span class="mdmap_app_input_prefix">http[s]://</span><input type="text" name="mdmap_app_mappings[cnt_new][domain]" placeholder="[www.]newdomain.com" /></div><div class="mdmap_app_input_hint">' . esc_html__('Enter the domain you want to map.', 'mdmap_app') . '</div></div>';
 						echo '<div class="mdmap_app_mapping_arrow">&raquo;</div>';
-						echo '<div><div class="mdmap_app_input_wrap"><span class="mdmap_app_input_prefix">'. get_home_url() .'</span><input type="text" name="mdmap_app_mappings[cnt_new][path]" placeholder="/mappedpage" /></div><div class="mdmap_app_input_hint">' . esc_html__('Enter the path to the desired root for this mapping', 'mdmap_app') . '</div></div>';
+						echo '<div><div class="mdmap_app_input_wrap"><span class="mdmap_app_input_prefix">'. esc_url(get_home_url()) .'</span><input type="text" name="mdmap_app_mappings[cnt_new][path]" placeholder="/mappedpage" /></div><div class="mdmap_app_input_hint">' . esc_html__('Enter the path to the desired root for this mapping', 'mdmap_app') . '</div></div>';
 					echo '</div>';
 					echo '<div class="mdmap_app_mapping_body">';
 						do_action('mdmap_appa_after_mapping_body', 'new', false);
@@ -597,7 +599,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 				if(stripos( $key, 'cnt_' ) !== false){
 
 					//only save not empty inputs
-					$domain = str_replace([']', '['], '', trim(trim($val['domain']), '/'));
+					$domain = str_replace([']', '['], '', trim(trim($val['domain'] ?? ''), '/'));
 					$path = trim(trim( isset($val['path']) ? $val['path'] : '' ), '/');
 					if($domain != ''/* && $path != ''*/){
 
@@ -639,14 +641,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 
 							//sanitize html-head-code: allow only safe head elements
 							if(!empty($val['customheadcode'])){
-								$allowed_head_tags = array(
-									'meta'     => array('name'=>true,'content'=>true,'property'=>true,'charset'=>true,'http-equiv'=>true),
-									'link'     => array('rel'=>true,'href'=>true,'type'=>true,'media'=>true,'sizes'=>true,'hreflang'=>true),
-									'script'   => array('type'=>true,'src'=>true,'async'=>true,'defer'=>true,'id'=>true),
-									'style'    => array('type'=>true),
-									'noscript' => array(),
-								);
-								$val['customheadcode'] = wp_kses($val['customheadcode'], $allowed_head_tags);
+								$val['customheadcode'] = wp_kses($val['customheadcode'], $this->allowedHeadCodeTags());
 							}
 
 							//only allow integers (statuscode) for redirection
@@ -697,7 +692,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 							if(function_exists('add_settings_error')) add_settings_error( 'mdmap_app_messages', 'mdmap_app_error_code', esc_html__('One or more mappings had an invalid domain or path and were skipped.', 'mdmap_app'), 'error' );
 						}
 					//if we have only one input filled
-					}else if(!($val['domain'] == '' && $val['path'] == '')){
+					}else if(!(($val['domain'] ?? '') == '' && ($val['path'] ?? '') == '')){
 						//check for existence, since this may be called in an upgrade process earlier, when this is not available yet
 						if(function_exists('add_settings_error')) add_settings_error( 'mdmap_app_messages', 'mdmap_app_error_code', esc_html__('One or more mappings were skipped — both a domain and a path are required.', 'mdmap_app'), 'error' );
 					}
@@ -726,7 +721,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 		//change the request, check for matching mappings
 		public function parse_request($do_parse, $instance, $extra_query_vars){
 			//store current request uri as fallback for the originalRequestURI variable, no matter if we have a match or not
-			$this->setOriginalRequestURI($_SERVER['REQUEST_URI']);
+			$this->setOriginalRequestURI($_SERVER['REQUEST_URI'] ?? '');
 
 			//definitely no request-mapping in backend
 			if(is_admin()) return $do_parse;
@@ -810,12 +805,12 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			$protocol = is_ssl() ? 'https' : 'http';
 
 			//confirm REQUEST_URI actually begins with the mapping path before slicing
-			$requestPath = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH );
+			$requestPath = parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH );
 			if( !$this->pathUnderBase( $requestPath, $mapping['path'] ) ) return;
 
 			//extra path beyond the mapped base (e.g. /product-a/subpage -> /subpage)
 			//substr can return false in PHP 7 if offset >= string length; normalise to empty string
-			$extraPath = substr( $_SERVER['REQUEST_URI'], strlen( $mapping['path'] ) );
+			$extraPath = substr( $_SERVER['REQUEST_URI'] ?? '', strlen( $mapping['path'] ) );
 			if( $extraPath === false ) $extraPath = '';
 
 			$redirectUrl = $protocol . '://' . $mapping['domain'] . '/' . ltrim( $extraPath, '/' );
@@ -842,11 +837,6 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 		//strip leading www. subdomain from a host string
 		private function stripWww($host){
 			return preg_replace('/^www\./i', '', $host);
-		}
-
-		//strip port number from a host string (e.g. example.com:8080 -> example.com)
-		private function stripPort($host){
-			return preg_replace('/:\d+$/', '', $host);
 		}
 
 		//standard function to check an uri against a mapping
@@ -1065,8 +1055,8 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 		public function replace_domain($input){
 			//check if we are on a mapped page and replace original domain with mapped domain
 			if(!empty($this->getCurrentMapping()['match'])){
-				//we need to make sure that we only replace right at the beginning (after the protocol), so we do not destroy subdomains (like img.mydomain.com). that is why we add the :// to the strings
-				//and we also need to be sure that we do not replace it in a hyperlink which leads to any page on our original domain or to the home page itelsf. so we add a pregex which needs to have any character, a dot and again any character before the next ". that should do the trick...
+				//anchor on ://host so only the exact site host is swapped; subdomains (img.mydomain.com) are left intact because :// is immediately followed by the subdomain, not the bare host.
+				//note: every absolute link to the main host in this string IS repointed at the mapped host (assets, same-site links, etc.). on a branded-alias domain that deliberately keeps the visitor on the mapped domain — it is not path-scoped.
 				$preg_host = preg_quote($this->siteHost);
 				//to understand the regex, use https://regexr.com/ :)
 				$input = preg_replace_callback('/:\/\/'.$preg_host.'([^\"\'\>\s]*)([\"\'>]|\s|$)/i', array($this, 'replace_domain_in_url'), $input);
@@ -1081,7 +1071,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 
 			//check if we are on a mapped page and replace original domain with mapped domain
 			if(!empty($this->getCurrentMapping()['match'])){
-				//we need to make sure that we only replace right at the beginning (after the protocol), so we do not destroy subdomains (like img.mydomain.com). that is why we add the :// to the strings
+				//swap only ://host so subdomains stay intact. mappedHost is host-only by design: assets live at the mapped domain's web root (mappeddomain.com/wp-content/...), never under a mapping's sub-path.
 				return str_ireplace( '://' . $this->siteHost, '://' . ($this->mappedHost ?? $this->getCurrentMapping()['match']['domain']), $input);
 			}
 
@@ -1127,8 +1117,9 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 		public function output_custom_head_code(){
 			if(!empty($this->getCurrentMapping()['match'])){
 				if(!empty($this->getCurrentMapping()['match']['customheadcode'])){
-					// html_entity_decode handles data saved by older versions of this plugin (stored with htmlentities)
-					echo html_entity_decode($this->getCurrentMapping()['match']['customheadcode']);
+					// html_entity_decode handles data saved by older versions of this plugin (stored with htmlentities);
+					// re-run wp_kses afterwards so decoding can't reintroduce markup the sanitizer would have stripped
+					echo wp_kses(html_entity_decode($this->getCurrentMapping()['match']['customheadcode']), $this->allowedHeadCodeTags());
 				}
 			}
 		}
@@ -1138,6 +1129,17 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 		//return true when a mapping should be processed (absent enabled key = active, for backward compat)
 		private function isMappingEnabled($mapping){
 			return !isset($mapping['enabled']) || intval($mapping['enabled']) !== 0;
+		}
+
+		//allowed tags/attributes for the per-mapping custom <head> code — used on save and re-applied on output
+		private function allowedHeadCodeTags(){
+			return array(
+				'meta'     => array('name'=>true,'content'=>true,'property'=>true,'charset'=>true,'http-equiv'=>true),
+				'link'     => array('rel'=>true,'href'=>true,'type'=>true,'media'=>true,'sizes'=>true,'hreflang'=>true),
+				'script'   => array('type'=>true,'src'=>true,'async'=>true,'defer'=>true,'id'=>true),
+				'style'    => array('type'=>true),
+				'noscript' => array(),
+			);
 		}
 
 		//return true when $path is the mapping's base path or a descendant of it.
@@ -1159,8 +1161,15 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			if($trimmed === '') return true;
 			//hierarchical pages: the dominant content type for this plugin's typical use case
 			if(function_exists('get_page_by_path') && get_page_by_path($trimmed, OBJECT, 'page')) return true;
-			//posts and custom post types reachable via the rewrite rules
-			if(function_exists('url_to_postid') && url_to_postid(home_url($path))) return true;
+			//posts and custom post types reachable via the rewrite rules.
+			//suspend our own home_url rewrite first: url_to_postid() builds its lookup url via home_url(),
+			//which we otherwise repoint at the mapped domain mid-request — that would break the match.
+			if(function_exists('url_to_postid')){
+				remove_filter('home_url', array($this, 'replace_home_url'), 10);
+				$postId = url_to_postid(home_url($path));
+				add_filter('home_url', array($this, 'replace_home_url'), 10, 3);
+				if($postId) return true;
+			}
 			return false;
 		}
 
@@ -1200,8 +1209,11 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			$mapping    = $this->getCurrentMapping()['match'];
 			$protocol   = is_ssl() ? 'https' : 'http';
 			$requestUri = $this->getOriginalRequestURI();
-			if(empty($requestUri)) $requestUri = $_SERVER['REQUEST_URI'];
-			echo '<link rel="canonical" href="' . esc_url($protocol . '://' . $mapping['domain'] . $requestUri) . '" />' . "\n";
+			if(empty($requestUri)) $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+			//canonical uses the path only — query strings (utm_*, etc.) would create non-canonical variants
+			$canonicalPath = parse_url($requestUri, PHP_URL_PATH);
+			if(!is_string($canonicalPath) || $canonicalPath === '') $canonicalPath = '/';
+			echo '<link rel="canonical" href="' . esc_url($protocol . '://' . $mapping['domain'] . $canonicalPath) . '" />' . "\n";
 		}
 
 		//output noindex on the original (un-mapped) path when the mapping has noindex enabled
@@ -1209,7 +1221,7 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			if(!empty($this->getCurrentMapping()['match'])) return; //on mapped domain: no noindex needed
 			$mappings = $this->getMappings();
 			if(empty($mappings) || !isset($mappings['mappings'])) return;
-			$requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+			$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 			if($requestPath === false || $requestPath === '') return;
 			foreach($mappings['mappings'] as $mapping){
 				if(!$this->isMappingEnabled($mapping)) continue;
@@ -1358,9 +1370,19 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			if(!current_user_can('manage_options')) wp_die(-1);
 			$domain = isset($_POST['domain']) ? sanitize_text_field(wp_unslash($_POST['domain'])) : '';
 			if(empty($domain)) wp_send_json_error(array('message' => esc_html__('No domain provided.', 'mdmap_app')));
+			//only test domains that are actually configured — keeps this endpoint from probing arbitrary hosts
+			$known    = false;
+			$mappings = $this->getMappings();
+			if(!empty($mappings['mappings']) && is_array($mappings['mappings'])){
+				foreach($mappings['mappings'] as $m){
+					if(isset($m['domain']) && $m['domain'] === $domain){ $known = true; break; }
+				}
+			}
+			if(!$known) wp_send_json_error(array('message' => esc_html__('Unknown domain — only configured mappings can be tested.', 'mdmap_app')));
 			$protocol = is_ssl() ? 'https' : 'http';
 			$url      = $protocol . '://' . $domain . '/';
-			$response = wp_remote_head($url, array('timeout' => 10, 'redirection' => 0, 'sslverify' => false));
+			//verify TLS: a mapped domain with a broken or mismatched certificate should report as a failure, since this plugin requires valid shared SSL
+			$response = wp_remote_head($url, array('timeout' => 10, 'redirection' => 0, 'sslverify' => true));
 			if(is_wp_error($response)){
 				wp_send_json_error(array('message' => $response->get_error_message()));
 			}

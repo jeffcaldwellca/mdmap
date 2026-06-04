@@ -262,13 +262,6 @@
   z-index: 10;
 }
 
-/* ── Featured nav tab ───────────────────────────────────────────── */
-a.nav-tab.nav-tab-featured {
-  background: transparent;
-  color: inherit;
-  border-color: #999;
-}
-
 /* ── Drag-to-reorder ────────────────────────────────────────────── */
 .mdmap_app_mappings .mdmap_app_mapping_header {
   cursor: grab;
