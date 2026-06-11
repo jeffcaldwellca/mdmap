@@ -76,12 +76,8 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
 
 			//set current uri
-			$phpServerVar = (!empty($this->getSettings()) && isset($this->getSettings()['php_server'])) ? $this->getSettings()['php_server'] : 'SERVER_NAME';
-		// Fall back to HTTP_HOST when SERVER_NAME doesn't reflect the actual requested host (e.g. behind a proxy or with domain aliases)
-		if( $phpServerVar === 'SERVER_NAME' && !empty($_SERVER['HTTP_HOST']) && (!isset($_SERVER['SERVER_NAME']) || $_SERVER['HTTP_HOST'] !== $_SERVER['SERVER_NAME']) ){
-			$phpServerVar = 'HTTP_HOST';
-		}
-		$this->setCurrentURI(($_SERVER[$phpServerVar] ?? '') . ($_SERVER['REQUEST_URI'] ?? ''));
+			$phpServerVar = self::resolvePhpServerVar($this->getSettings(), $_SERVER);
+			$this->setCurrentURI(($_SERVER[$phpServerVar] ?? '') . ($_SERVER['REQUEST_URI'] ?? ''));
 
 			//process request
 			add_filter( 'do_parse_request', array( $this, 'parse_request' ), 10, 3 );
@@ -133,6 +129,20 @@ if( !class_exists( 'MultipleDomainMapper' ) ){
 			//settings link on the plugins list row
 			add_filter('plugin_action_links_' . $this->pluginBasename, array( $this, 'add_settings_link' ));
 		  }
+
+		//pick which $_SERVER var identifies the requested host
+		private static function resolvePhpServerVar($settings, $server){
+			//an explicitly saved, valid choice is honored as-is — the fallback below must not override it
+			$saved = (!empty($settings) && isset($settings['php_server'])) ? $settings['php_server'] : '';
+			if( $saved === 'SERVER_NAME' || $saved === 'HTTP_HOST' ){
+				return $saved;
+			}
+			//no saved choice: default to SERVER_NAME, but fall back to HTTP_HOST when SERVER_NAME doesn't reflect the actual requested host (e.g. behind a proxy or with domain aliases)
+			if( !empty($server['HTTP_HOST']) && (!isset($server['SERVER_NAME']) || $server['HTTP_HOST'] !== $server['SERVER_NAME']) ){
+				return 'HTTP_HOST';
+			}
+			return 'SERVER_NAME';
+		}
 
 		//setters/getters
 		private function setMappings($mappings){
