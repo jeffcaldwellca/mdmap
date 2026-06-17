@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Muldoon mark: a globe raked by raptor claws">
+  <title>Muldoon</title>
+  <g fill="none" stroke="#2271b1" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="60" cy="60" r="33"/>
+    <ellipse cx="60" cy="60" rx="14" ry="33"/>
+    <line x1="27" y1="60" x2="93" y2="60"/>
+  </g>
+  <g fill="#1d2327">
+    <path d="M30,102 Q52,74 60,40 Q40,70 30,102 Z"/>
+    <path d="M46,108 Q70,72 92,22 Q62,68 46,108 Z"/>
+    <path d="M64,104 Q84,74 102,38 Q80,72 64,104 Z"/>
+  </g>
+</svg>

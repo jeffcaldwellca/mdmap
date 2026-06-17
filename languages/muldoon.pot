@@ -1,0 +1,421 @@
+# Copyright (C) 2026 Jeff Caldwell
+# This file is distributed under the GPLv3 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Muldoon 2.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/muldoon\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-06-16T04:46:30+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: muldoon\n"
+
+#. Plugin Name of the plugin
+#: app.php
+#: app.php:240
+#: app.php:280
+msgid "Muldoon"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: app.php
+msgid "https://www.jeffcaldwell.ca/muldoon/"
+msgstr ""
+
+#. Description of the plugin
+#: app.php
+msgid "Point any extra domain or subdomain at a WordPress page, post, or archive without redirects. The mapped domain always stays in the visitor's address bar."
+msgstr ""
+
+#. Author of the plugin
+#: app.php
+msgid "Jeff Caldwell"
+msgstr ""
+
+#: app.php:215
+msgid "This mapping will be deleted when you save. Click Undo to keep it."
+msgstr ""
+
+#: app.php:216
+msgid "Undo"
+msgstr ""
+
+#: app.php:217
+msgid "Dismiss this notice."
+msgstr ""
+
+#: app.php:218
+msgid "You have unsaved changes. Click Save Mappings to apply them."
+msgstr ""
+
+#: app.php:219
+msgid "Unsaved changes"
+msgstr ""
+
+#: app.php:220
+msgid "Reachable"
+msgstr ""
+
+#: app.php:221
+msgid "Unreachable"
+msgstr ""
+
+#: app.php:222
+msgid "Check failed"
+msgstr ""
+
+#: app.php:223
+msgid "Export JSON"
+msgstr ""
+
+#: app.php:224
+msgid "Mappings imported! Reloading…"
+msgstr ""
+
+#: app.php:225
+msgid "Import failed. Please check the file and try again."
+msgstr ""
+
+#: app.php:247
+#: app.php:265
+msgid "Settings"
+msgstr ""
+
+#: app.php:264
+msgid "Mappings"
+msgstr ""
+
+#: app.php:266
+msgid "Developers"
+msgstr ""
+
+#: app.php:267
+msgid "Help"
+msgstr ""
+
+#: app.php:281
+msgid "The Multi Domain Name Mapper"
+msgstr ""
+
+#. translators: %s: name of the active tab (Mappings, Settings, etc.).
+#: app.php:288
+#, php-format
+msgid "%s saved successfully"
+msgstr ""
+
+#: app.php:293
+msgid "Point any extra domain or subdomain at a page, post, or archive on this site, with no redirects. Visitors always see the mapped domain in their address bar. New here? Check the Help tab for setup instructions."
+msgstr ""
+
+#: app.php:311
+msgid "Domain mapping settings"
+msgstr ""
+
+#: app.php:318
+msgid "PHP Server Variable:"
+msgstr ""
+
+#: app.php:326
+msgid "Compatibility mode:"
+msgstr ""
+
+#: app.php:334
+msgid "Excluded domains:"
+msgstr ""
+
+#: app.php:347
+msgid "Developer Hooks"
+msgstr ""
+
+#: app.php:348
+msgid "Muldoon provides action and filter hooks for developers to extend its behaviour."
+msgstr ""
+
+#: app.php:350
+msgid "Actions prefix:"
+msgstr ""
+
+#: app.php:351
+msgid "Filters prefix:"
+msgstr ""
+
+#: app.php:353
+msgid "Search for these prefixes in the plugin source to see all available hooks."
+msgstr ""
+
+#: app.php:357
+msgid "Setup"
+msgstr ""
+
+#: app.php:358
+msgid "Before adding any mappings, each extra domain needs to point to the same web root as your main WordPress site. Two things to set up:"
+msgstr ""
+
+#: app.php:360
+msgid "Set the A-record of each extra domain to your main site's IP address (done through your domain registrar's DNS settings)."
+msgstr ""
+
+#: app.php:361
+msgid "Configure your hosting to route all domains to the same WordPress directory (virtual host, domain alias, or parked domain)."
+msgstr ""
+
+#: app.php:363
+msgid "Quick test: drop a file in your WordPress root and confirm it's accessible from both domains before adding any mappings."
+msgstr ""
+
+#: app.php:364
+msgid "Using nginx? Switch the PHP Server Variable to HTTP_HOST in the Settings tab."
+msgstr ""
+
+#: app.php:371
+msgid "Domain mappings"
+msgstr ""
+
+#: app.php:378
+msgid "Your domain mappings:"
+msgstr ""
+
+#. translators: %s: name of the active tab (Mappings, Settings, etc.).
+#: app.php:396
+#, php-format
+msgid "Save %s"
+msgstr ""
+
+#: app.php:419
+msgid "Advanced server settings. Most sites can leave these at their defaults."
+msgstr ""
+
+#: app.php:427
+msgid "Most sites work fine with the default. If your mappings aren't resolving correctly, switch to HTTP_HOST below."
+msgstr ""
+
+#: app.php:428
+#: app.php:440
+msgid "Default"
+msgstr ""
+
+#: app.php:429
+msgid "recommended for nginx"
+msgstr ""
+
+#: app.php:438
+msgid "Disables domain replacement inside wp-admin. Useful if a page builder or visual editor has trouble loading mapped pages."
+msgstr ""
+
+#: app.php:447
+msgid "A multilingual plugin (WPML or Polylang) is active. Add the language-specific domains it manages here to prevent the mapper from processing them."
+msgstr ""
+
+#: app.php:450
+msgid "One domain per line. The mapper ignores requests arriving on these domains."
+msgstr ""
+
+#: app.php:455
+msgid "Left field"
+msgstr ""
+
+#: app.php:456
+msgid "enter the domain you want to use. http/https and www/non-www are handled automatically, so one entry per domain is all you need."
+msgstr ""
+
+#: app.php:458
+msgid "Right field"
+msgstr ""
+
+#: app.php:459
+msgid "enter the WordPress path this domain should point to. All pages beneath that path are included automatically."
+msgstr ""
+
+#: app.php:477
+msgid "Remove this mapping"
+msgstr ""
+
+#: app.php:477
+msgid "Remove"
+msgstr ""
+
+#: app.php:491
+msgid "Add a new mapping"
+msgstr ""
+
+#: app.php:494
+msgid "Enter the domain you want to map."
+msgstr ""
+
+#: app.php:496
+msgid "Enter the path to the desired root for this mapping"
+msgstr ""
+
+#: app.php:505
+msgid "Add mapping"
+msgstr ""
+
+#: app.php:506
+msgid "Fill in the domain and path above, then click Add mapping. Pending edits to other rows are saved at the same time."
+msgstr ""
+
+#: app.php:512
+msgid "Export Mappings"
+msgstr ""
+
+#: app.php:513
+msgid "Import Mappings"
+msgstr ""
+
+#. translators: 1: configured max_input_vars value, 2: the literal "max_input_vars", 3: number of mappings, 4: input vars per mapping, 5: total input vars used, 6: the literal "max_input_vars".
+#: app.php:524
+#, php-format
+msgid "Heads up! Your server allows a maximum of %1$s %2$s. With %3$s mapping(s) at %4$s vars each (%5$s total), you're approaching the limit. Increase %6$s to save more mappings."
+msgstr ""
+
+#: app.php:532
+msgid "Ask your host how to raise the max_input_vars limit."
+msgstr ""
+
+#: app.php:535
+msgid "The Save button has been hidden to prevent partial data loss. Increase max_input_vars and reload to restore it."
+msgstr ""
+
+#: app.php:554
+msgid "Active"
+msgstr ""
+
+#: app.php:557
+msgid "Test connection"
+msgstr ""
+
+#: app.php:569
+msgid "Custom <head> code (this domain only)"
+msgstr ""
+
+#: app.php:570
+msgid "e.g. <meta name=\"google-site-verification\" content=\"…\" />"
+msgstr ""
+
+#: app.php:574
+msgid "301 Redirect to mapped domain"
+msgstr ""
+
+#: app.php:575
+msgid "Redirect visitors who arrive at the original path to this domain instead."
+msgstr ""
+
+#: app.php:579
+msgid "Noindex original URL"
+msgstr ""
+
+#: app.php:580
+msgid "Add a noindex tag to the original path so search engines index only the mapped domain."
+msgstr ""
+
+#: app.php:584
+msgid "Pass through unmatched paths"
+msgstr ""
+
+#: app.php:585
+msgid "When a request on this domain doesn't resolve under the mapped path, serve the same path from the main site instead of 404."
+msgstr ""
+
+#: app.php:586
+msgid "Useful when the alternate domain acts as a branded alias of the main site. Any public top-level page on the main site becomes reachable from this domain, so review before enabling on a site with private pages."
+msgstr ""
+
+#: app.php:590
+msgid "Site name (this domain only)"
+msgstr ""
+
+#: app.php:591
+msgid "Leave empty to use the main site name"
+msgstr ""
+
+#: app.php:592
+msgid "Replaces the site name in <title> tags, Open Graph site_name, RSS feeds, and SEO plugin output while visitors browse this mapped domain."
+msgstr ""
+
+#: app.php:596
+msgid "Site tagline (this domain only)"
+msgstr ""
+
+#: app.php:597
+msgid "Leave empty to use the main site tagline"
+msgstr ""
+
+#. translators: %sitedesc% is a Yoast/RankMath template variable shown to the user verbatim.
+#: app.php:599
+#, php-format
+msgid "Replaces the site tagline (blogdescription) and Yoast/RankMath %sitedesc% expansions when visitors are on this mapped domain."
+msgstr ""
+
+#: app.php:603
+msgid "Default Open Graph image (this domain only)"
+msgstr ""
+
+#: app.php:605
+msgid "Used as a fallback og:image / twitter:image when a page on this mapped domain has no specific share image set. Per-page Yoast/RankMath images still take precedence."
+msgstr ""
+
+#: app.php:609
+msgid "Analytics ID (GA4 or GTM, this domain only)"
+msgstr ""
+
+#: app.php:611
+msgid "Injects a gtag.js snippet when visitors are browsing this mapped domain."
+msgstr ""
+
+#: app.php:615
+msgid "robots.txt Sitemap URL (this domain only)"
+msgstr ""
+
+#: app.php:617
+msgid "Overrides the Sitemap: line in robots.txt while visitors browse this domain."
+msgstr ""
+
+#: app.php:682
+msgid "Mapping to \"/\" is not allowed because it would intercept all site traffic."
+msgstr ""
+
+#: app.php:744
+msgid "At least one mapping with duplicate domain or path has been dropped."
+msgstr ""
+
+#: app.php:748
+msgid "One or more mappings had an invalid domain or path and were skipped."
+msgstr ""
+
+#: app.php:753
+msgid "One or more mappings were skipped because both a domain and a path are required."
+msgstr ""
+
+#: app.php:1311
+msgid "Mapped domain:"
+msgstr ""
+
+#: app.php:1428
+msgid "No domain provided."
+msgstr ""
+
+#: app.php:1437
+msgid "Unknown domain. Only configured mappings can be tested."
+msgstr ""
+
+#: app.php:1460
+msgid "No data provided."
+msgstr ""
+
+#: app.php:1463
+msgid "Invalid JSON."
+msgstr ""
+
+#: app.php:1466
+msgid "The file doesn't look like a valid mappings export."
+msgstr ""
+
+#. translators: 1: number of mappings added, 2: number skipped
+#: app.php:1492
+#, php-format
+msgid "Import complete: %1$d added, %2$d skipped (duplicate or invalid)."
+msgstr ""
