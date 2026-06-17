@@ -82,18 +82,23 @@
       },
       {
         "@type": "Question",
-        "name": "Does Muldoon work with Yoast SEO and RankMath?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Yes. XML sitemaps list the mapped domains, og:url is patched, and the canonical tag is rewritten to the mapped domain with no duplicate tag for both Yoast SEO and RankMath." }
+        "name": "Does it work with Yoast SEO and RankMath?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. XML sitemaps list the mapped domains, og:url is patched, and the canonical is rewritten to the mapped domain with no duplicate tag for both Yoast SEO and RankMath." }
       },
       {
         "@type": "Question",
-        "name": "Does Muldoon work with page builders like Elementor?",
+        "name": "Does it work with page builders like Elementor?",
         "acceptedAnswer": { "@type": "Answer", "text": "Yes, including Elementor. If a page builder fails to load mapped pages in the editor, enable Enhanced Compatibility Mode in the Settings tab." }
       },
       {
         "@type": "Question",
-        "name": "Is Muldoon compatible with WordPress Multisite?",
-        "acceptedAnswer": { "@type": "Answer", "text": "No. Multisite has built-in domain mapping. Muldoon targets single-site installations only." }
+        "name": "Is it compatible with WooCommerce or Multisite?",
+        "acceptedAnswer": { "@type": "Answer", "text": "WooCommerce is not reliably supported; it uses many non-standard link functions. Multisite is not supported either, since it has built-in domain mapping; Muldoon targets single-site installations." }
+      },
+      {
+        "@type": "Question",
+        "name": "Will upgrading from MDMAP keep my mappings?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. The 2.0 rebrand changed user-facing names only. Internal identifiers are unchanged, so existing installs keep every saved mapping and setting with zero migration." }
       }
     ]
   }
@@ -271,8 +276,8 @@
     <section class="band" id="screens">
       <div class="wrap">
         <p class="kicker">In the admin</p>
-        <h2>A real WordPress admin, not a mockup</h2>
-        <p class="section-lede">Manage everything from <strong>Tools&nbsp;→&nbsp;Muldoon</strong>: domains on the left, paths on the right, with per-mapping SEO and branding options a click away.</p>
+        <h2>Manage every mapping from one screen</h2>
+        <p class="section-lede">Everything lives under <strong>Tools&nbsp;→&nbsp;Muldoon</strong>: domains on the left, paths on the right, with per-mapping SEO and branding options a click away.</p>
         <figure class="shot">
           <div class="shot-bar">
             <span class="tl tl-r"></span><span class="tl tl-y"></span><span class="tl tl-g"></span>
